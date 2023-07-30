@@ -18,10 +18,44 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path(
-        route='home/',
+        route='admin/', 
+        view=admin.site.urls,
+        name="admin"
+    ),
+    path(
+        route='',
         view=include('home.urls'),
         name='home'
-    )
+    ),
+    path(
+        route='account/',
+        view=include('account.urls'),
+        name='account'
+    ),
+    path(
+        route='notification/',
+        view=include('notification.urls'),
+        name='notification'
+    ),
+    path(
+        route='task/',
+        view=include('task.urls'),
+        name='task'
+    ),
+    path(
+        route='comment/',
+        view=include('comment.urls'),
+        name='comment'
+    ),
+    path(
+        route='project/',
+        view=include('project.urls'),
+        name='project'
+    ),
+    path(
+        route='chat/',
+        view=include('chat.urls'),
+        name='chat'
+    ) 
 ]

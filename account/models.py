@@ -27,7 +27,9 @@ class Profile(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
-
+    is_email_verified = models.BooleanField(
+        default=False
+    )
     class Meta:
         db_table = "user_profiles"
     

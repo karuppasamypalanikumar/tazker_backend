@@ -55,3 +55,31 @@ class RoleView(views.APIView):
             },
             status=status.HTTP_200_OK
         )
+
+class SigninView(views.APIView):
+    def post(self, request: request):
+        profile = controllers.AccountViewController.signin(request=request)
+        return response.Response(
+            data={
+                'status_code' : _('1'),
+                'status_message' : _('Account Login successfully'),
+                'data' : profile
+            },
+            status=status.HTTP_200_OK
+        )
+
+class SignupView(views.APIView):
+    def post(self, request: request):
+        profile = controllers.AccountViewController.signup(request=request)
+        return response.Response(
+            data={
+                'status_code' : _('1'),
+                'status_message' : _('Account Created successfully'),
+                'data' : profile
+            },
+            status=status.HTTP_200_OK
+        )
+
+class SignoutView(views.APIView):
+    def post(self, request: request):
+        pass

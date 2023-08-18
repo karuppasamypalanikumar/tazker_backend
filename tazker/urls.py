@@ -29,32 +29,32 @@ urlpatterns = [
         name='home'
     ),
     path(
-        route='account/',
+        route='api/v1/account/',
         view=include('account.urls'),
         name='account'
     ),
     path(
-        route='notification/',
+        route='api/v1/notification/',
         view=include('notification.urls'),
         name='notification'
     ),
     path(
-        route='task/',
+        route='api/v1/task/',
         view=include('task.urls'),
         name='task'
     ),
     path(
-        route='comment/',
+        route='api/v1/comment/',
         view=include('comment.urls'),
         name='comment'
     ),
     path(
-        route='project/',
+        route='api/v1/project/',
         view=include('project.urls'),
         name='project'
     ),
     path(
-        route='chat/',
+        route='api/v1/chat/',
         view=include('chat.urls'),
         name='chat'
     ) 

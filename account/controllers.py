@@ -1,9 +1,10 @@
 from rest_framework import (
     request,
-    response,
     serializers,
     status
 )
+from django.db import models as django_models
+from django.contrib.auth import models as auth_models
 from account import (
     models as account_models,
     serializers as account_serializers
@@ -24,10 +25,27 @@ class RoleViewController():
     
     @staticmethod
     def create_role(request: request.Request):
-        name = validator.check_role_name(request=request)
-        project = validator.check_role_project_status(request=request)
-        task = validator.check_role_task_status(request=request)
-        comment = validator.check_role_comment_status(request=request)
+        name = validator.check(
+            key="name",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=100
+        )
+        project = validator.check(
+            key="project",
+            type=validator.AvailableTypes.Boolean,
+            request=request
+        )
+        task = validator.check(
+            key="task",
+            type=validator.AvailableTypes.Boolean,
+            request=request
+        )
+        comment = validator.check(
+            key="comment",
+            type=validator.AvailableTypes.Boolean,
+            request=request
+        )
         # create Role
         try:
             role = account_models.Role.objects.create(
@@ -53,7 +71,11 @@ class RoleViewController():
     @staticmethod
     def update_role(request: request.Request):
          # update Role
-        id = validator.check_role_id(request=request)
+        id = validator.check(
+            key="id",
+            type=validator.AvailableTypes.Integer,
+            request=request
+        )
         name = request.data.get("name")
         task = request.data.get("task")
         comment = request.data.get("comment")
@@ -61,16 +83,32 @@ class RoleViewController():
         try:
             role = account_models.Role.objects.get(id=id)
             if name:
-                name = validator.check_role_name(request=request)
+                name = validator.check(
+                    key="name",
+                    type=validator.AvailableTypes.String,
+                    request=request
+                )
                 role.name = name
-            if task:
-                task = validator.check_role_task_status(request=request)
+            if task is not None:
+                task = validator.check(
+                    key="task",
+                    type=validator.AvailableTypes.Boolean,
+                    request=request
+                )
                 role.task = task
-            if comment:
-                comment = validator.check_role_comment_status(request=request)
+            if comment is not None:
+                comment = validator.check(
+                    key="comment",
+                    type=validator.AvailableTypes.Boolean,
+                    request=request
+                )
                 role.comment = comment
-            if project:
-                project = validator.check_role_project_status(request=request)
+            if project is not None:
+                project = validator.check(
+                    key="project",
+                    type=validator.AvailableTypes.Boolean,
+                    request=request
+                )
                 role.project = project
             role.save()
         except account_models.Role.DoesNotExist:
@@ -98,7 +136,11 @@ class RoleViewController():
     @staticmethod
     def delete_role(request: request.Request):
         # Delete Role
-        id = validator.check_role_id(request=request)
+        id = validator.check(
+            key="id",
+            type=validator.AvailableTypes.String,
+            request=request
+        )
         try:
             role = account_models.Role.objects.get(id=id)
             role.delete()
@@ -118,3 +160,145 @@ class RoleViewController():
                 },
                 code=status.HTTP_400_BAD_REQUEST
             )
+
+class AccountViewController():
+    
+    @staticmethod
+    def signin(request: request.Request):
+        username_or_email = validator.check(
+            key="username",
+            type=validator.AvailableTypes.String,
+            request=request
+        )
+        password = validator.check(
+            key="password",
+            type=validator.AvailableTypes.String,
+            request=request
+        )
+        user = auth_models.User.objects.get(
+            django_models.Q(username=username_or_email) |
+            django_models.Q(email=username_or_email)
+        )
+        if user:
+            # Verify the password
+            if user.password != password:
+                raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _('Invalid password')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+
+            data = account_serializers.ProfileSerializer(
+                instance=user,
+                many=False
+            ).data
+            return data
+                
+    
+    @staticmethod
+    def signup(request: request.Request):
+        username = validator.check(
+            key="username",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=150
+        )
+        first_name = validator.check(
+            key="first_name",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=150
+        )
+        last_name = validator.check(
+            key="last_name",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=150
+        )
+        email = validator.check(
+            key="email",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=254,
+            is_email=True
+        )
+        # check email already exist
+        if auth_models.User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _('email already exist')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+        password = validator.check(
+            key="password",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=128,
+            is_password=True
+        )
+        confirm_password = validator.check(
+            key="confirm_password",
+            type=validator.AvailableTypes.String,
+            request=request,
+            max_count=128,
+            is_password=True
+        )
+        role_id = validator.check(
+            key="role_id",
+            type=validator.AvailableTypes.Integer,
+            request=request
+        )
+        if password != confirm_password:
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _('password and confirm_password mismatch')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            role = account_models.Role.objects.get(
+                id=role_id
+            )
+            user = auth_models.User.objects.create(
+                password=password,
+                is_superuser=False,
+                username=username,
+                last_name=last_name,
+                email=email,
+                is_active=True,
+                first_name=first_name
+            )
+            profile = account_models.Profile.objects.create(
+                user=user,
+                role=role
+            )
+            result_data = account_serializers.ProfileSerializer(
+                instance=user,
+                many=False
+            ).data
+            return result_data
+        except account_models.Role.DoesNotExist:
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'invalid role id')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'user creation failed with {str(e)}')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+
+    @staticmethod
+    def signout(request: request.Request):
+        pass

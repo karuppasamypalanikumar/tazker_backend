@@ -3,127 +3,123 @@ from rest_framework import (
     serializers,
     status
 )
+from enum import Enum
 from django.utils.translation import gettext as _
+from django.core import validators
 
-def check_role_name(request: request.Request):
+class AvailableTypes(Enum):
+    Integer = 1
+    String = 2
+    Floot = 3
+    Boolean = 4
+
+def check(
+        key: str,
+        type: AvailableTypes,
+        request: request.Request,
+        max_count: int = None,
+        min_count: int = None,
+        is_email: bool = False,
+        is_password: bool = False
+):
+    # Data Check 
     data = request.data
-    name = data.get('name')
-    if not name:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role name field is required')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
+    result = data.get(key)
+    if (result is None):
+        params = request.query_params
+        result = params.get(key)
+        if (not result):
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'{key} field is required')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+    # Type Conversion
     try:
-        name = str(name)
+        if type == AvailableTypes.String:
+            result = str(result)
+            # Min and Maxmimum count check
+            if min_count:
+                if len(result) < min_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be min {min_count} char')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
+            if max_count:
+                if len(result) > max_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be less than max {max_count} char')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
+            if is_email:
+                validators.validate_email(result)
+            if is_password:
+                pass
+        elif type == AvailableTypes.Boolean:
+            result = bool(result)
+        elif type == AvailableTypes.Integer:
+            result = int(result)
+            if min_count:
+                if result > min_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be min {min_count}')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
+            if max_count:
+                if result < max_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be max {max_count}')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
+        elif type == AvailableTypes.Floot:
+            result = float(result)
+            if min_count:
+                if result > min_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be min {min_count}')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
+            if max_count:
+                if result < max_count:
+                    raise serializers.ValidationError(
+                        detail={
+                            'status_code': _('0'),
+                            'status_message': _(f'{key} should be max {max_count}')
+                        },
+                        code=status.HTTP_400_BAD_REQUEST
+                    )
     except ValueError:
         raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role name invalid format')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    if len(name) > 100:
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'{key} invalid format')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+    except Exception as e:
         raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role name max len 100 char')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    return name
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'{key} unknown error:: {str(e)}')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+    return result
 
-def check_role_task_status(request: request.Request):
-    data = request.data
-    task = data.get('task')
-    if not task:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role task field is required')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    try:
-        task = eval(task.title())
-    except ValueError:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role task invalid format')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    return task
-
-def check_role_id(request: request.Request):
-    data = request.data
-    id = data.get('id')
-    if not id:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role id field is required')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    try:
-        id = int(id)
-    except ValueError:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role id invalid format')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    return id
-
-def check_role_comment_status(request: request.Request):
-    data = request.data
-    comment = data.get('comment')
-    if not comment:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role comment field is required')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    try:
-        comment = eval(comment.title())
-    except ValueError:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role comment invalid format')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    return comment
-
-def check_role_project_status(request: request.Request):
-    data = request.data
-    project = data.get('project')
-    if not project:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role project field is required')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    try:
-        project = eval(project.title())
-    except ValueError:
-        raise serializers.ValidationError(
-            detail={
-                'status_code': _('0'),
-                'status_message': _('role project invalid format')
-            },
-            code=status.HTTP_400_BAD_REQUEST
-        )
-    return project

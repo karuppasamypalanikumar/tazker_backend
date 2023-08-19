@@ -404,6 +404,11 @@ class AccountViewController():
         try:
             user.save()
             profile.save()
+            result_data = account_serializers.ProfileSerializer(
+                instance=user,
+                many=False
+            ).data
+            return result_data
         except ValueError:
             raise serializers.ValidationError(
                 detail={

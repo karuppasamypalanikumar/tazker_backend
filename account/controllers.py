@@ -175,10 +175,19 @@ class AccountViewController():
             type=validator.AvailableTypes.String,
             request=request
         )
-        user = auth_models.User.objects.get(
-            django_models.Q(username=username_or_email) |
-            django_models.Q(email=username_or_email)
-        )
+        try:
+            user = auth_models.User.objects.get(
+                django_models.Q(username=username_or_email) |
+                django_models.Q(email=username_or_email)
+            )
+        except auth_models.User.DoesNotExist:
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _('no user found')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
         if user:
             # Verify the password
             if user.password != password:
@@ -189,7 +198,9 @@ class AccountViewController():
                 },
                 code=status.HTTP_400_BAD_REQUEST
             )
-
+            profile = user.profile
+            profile.is_online=True
+            profile.save()
             data = account_serializers.ProfileSerializer(
                 instance=user,
                 many=False
@@ -277,6 +288,8 @@ class AccountViewController():
                 user=user,
                 role=role
             )
+            profile.is_online=True
+            profile.save()
             result_data = account_serializers.ProfileSerializer(
                 instance=user,
                 many=False
@@ -301,4 +314,109 @@ class AccountViewController():
 
     @staticmethod
     def signout(request: request.Request):
+        user = request.user
+        profile = user.profile
+        profile.is_online=False
+        profile.save()
+    
+    @staticmethod
+    def get_profile(request: request.Request):
+        user = request.user
+        result_data = account_serializers.ProfileSerializer(
+            instance=user,
+            many=False
+        ).data
+        return result_data
+
+    @staticmethod
+    def update_profile(request: request.Request):
+        data = request.data
+        username = data.get('username')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        role_id = data.get('role_id')
+        user = request.user
+        profile = user.profile
+        if username:
+            username = validator.check(
+                key="username",
+                type=validator.AvailableTypes.String,
+                request=request,
+                max_count=150
+            )
+            try:
+                user.username = username
+                user.save()
+            except Exception as e:
+                raise serializers.ValidationError(
+                    detail={
+                        'status_code': _('0'),
+                        'status_message': _(f'username is not available please pick another one')
+                    },
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+        if first_name:
+            first_name = validator.check(
+                key="first_name",
+                type=validator.AvailableTypes.String,
+                request=request,
+                max_count=150
+            )
+            user.first_name = first_name
+        if last_name:
+            last_name = validator.check(
+                key="last_name",
+                type=validator.AvailableTypes.String,
+                request=request,
+                max_count=150
+            )
+            user.last_name = last_name
+        if email:
+            email = validator.check(
+                key="email",
+                type=validator.AvailableTypes.String,
+                request=request,
+                max_count=254,
+                is_email=True
+            )
+            user.email = email
+            profile.is_email_verified = False
+        if role_id:
+            role_id = validator.check(
+                key="role_id",
+                type=validator.AvailableTypes.Integer,
+                request=request
+            )
+            try:
+                role = account_models.Role.objects.get(
+                    id=role_id
+                )
+                profile.role = role
+            except account_models.Role.DoesNotExist:
+                 raise serializers.ValidationError(
+                    detail={
+                        'status_code': _('0'),
+                        'status_message': _(f'invalid role id')
+                    },
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+        try:
+            user.save()
+            profile.save()
+        except ValueError:
+            raise serializers.ValidationError(
+                detail={
+                    'status_code': _('0'),
+                    'status_message': _(f'invalid value format error when saving details')
+                },
+                code=status.HTTP_400_BAD_REQUEST
+            )
+
+    @staticmethod
+    def send_mail(request: request.Request):
+        pass
+
+    @staticmethod
+    def verify_email(request: request.Request):
         pass

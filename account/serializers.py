@@ -29,7 +29,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_token(self, obj):
         token, is_created = rest_models.Token.objects.get_or_create(user=obj)
-        return str(token)
+        return token.key
     
     def get_role(self, obj):
         return RoleSerializer(instance=obj.profile.role,many=False).data

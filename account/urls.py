@@ -21,5 +21,15 @@ urlpatterns = [
         route='signout/',
         view=views.SignoutView.as_view(),
         name='signout'
-    )
+    ), 
+    path(
+        route='profile/',
+        view=views.ProfileView.as_view(),
+        name='profile'
+    ),
+    path(
+        route='verify-email/',
+        view=views.EmailVerificationView.as_view(),
+        name='verify-email'
+    ),
 ]

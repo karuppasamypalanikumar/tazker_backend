@@ -30,6 +30,9 @@ class Profile(models.Model):
     is_email_verified = models.BooleanField(
         default=False
     )
+    is_online = models.BooleanField(
+        default=False
+    )
     class Meta:
         db_table = "user_profiles"
     

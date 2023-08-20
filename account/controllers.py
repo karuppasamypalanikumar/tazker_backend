@@ -134,16 +134,25 @@ class RoleViewController():
         return role_data
     
     @staticmethod
-    def delete_role(request: request.Request):
+    def delete_roles(request: request.Request):
         # Delete Role
-        id = validator.check(
-            key="id",
-            type=validator.AvailableTypes.String,
+        ids = validator.check(
+            key="ids",
+            type=validator.AvailableTypes.List,
             request=request
         )
         try:
-            role = account_models.Role.objects.get(id=id)
-            role.delete()
+            roles = account_models.Role.objects.filter(id__in=ids)
+            if roles:
+                roles.delete()
+            else:
+                raise serializers.ValidationError(
+                    detail={
+                        'status_code': _('0'),
+                        'status_message': _('Invalid role id')
+                    },
+                    code=status.HTTP_400_BAD_REQUEST
+                )
         except account_models.Role.DoesNotExist:
             raise serializers.ValidationError(
                 detail={

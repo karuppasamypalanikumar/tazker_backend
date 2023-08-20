@@ -50,7 +50,7 @@ class RoleView(views.APIView):
         )
     # Delete Existing Roles
     def delete(self, request: request.Request):
-        controllers.RoleViewController.delete_role(request=request)
+        controllers.RoleViewController.delete_roles(request=request)
         return response.Response(
             data={
                 'status_code': _('1'),

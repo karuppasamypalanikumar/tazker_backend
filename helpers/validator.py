@@ -12,6 +12,7 @@ class AvailableTypes(Enum):
     String = 2
     Floot = 3
     Boolean = 4
+    List = 5
 
 def check(
         key: str,
@@ -65,6 +66,8 @@ def check(
                 pass
         elif type == AvailableTypes.Boolean:
             result = bool(result)
+        elif type == AvailableTypes.List:
+            result = list(result)
         elif type == AvailableTypes.Integer:
             result = int(result)
             if min_count:

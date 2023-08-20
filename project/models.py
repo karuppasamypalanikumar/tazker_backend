@@ -9,7 +9,13 @@ class Project(models.Model):
     manager = models.ForeignKey(
         to=auth_models.User,
         on_delete=models.SET_NULL,
+        blank=True,
         null=True
+    )
+    members = models.ManyToManyField(
+        to=auth_models.User,
+        related_name="project_members",
+        blank=True
     )
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
